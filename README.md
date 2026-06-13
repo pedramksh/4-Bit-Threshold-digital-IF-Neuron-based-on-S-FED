@@ -1,4 +1,4 @@
-# 4-Bit-Threshold-digital-IF-Neuron-based-on-S-FED
+# 4-Bit-Threshold-digital-IF-Neuron-based-on-SFED
 This is a simulation file repository for a 4-Bit Threshold digital IF Neuron
 
 # Digital S-FED Integrate-and-Fire Spiking Neuron
