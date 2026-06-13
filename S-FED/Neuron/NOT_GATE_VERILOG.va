@@ -1,0 +1,14 @@
+// VerilogA for verilog_a_test4, NOT_GATE, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module NOT_GATE(in, out, vdd, gnd, bulk);
+  inout in, out, vdd, gnd, bulk;
+  electrical in, out, vdd, gnd, bulk;
+
+
+SFED sfed1 (.d(vdd), .gs(gnd), .gd(in), .s(out), .b(bulk));
+SFED sfed2 (.d(out), .gs(in), .gd(vdd), .s(gnd), .b(bulk));
+
+endmodule

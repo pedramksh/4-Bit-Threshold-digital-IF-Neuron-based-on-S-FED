@@ -1,0 +1,21 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+// 4-bit ripple-carry adder: A[3:0] + B[3:0] + Cin -> S[3:0], Cout
+module RIPPLE_ADDER4_MOS(
+  a0,a1,a2,a3,
+  b0,b1,b2,b3,
+  cin,
+  s0,s1,s2,s3,
+  cout,
+  vdd,gnd
+);
+  inout a0,a1,a2,a3,b0,b1,b2,b3,cin,s0,s1,s2,s3,cout,vdd,gnd;
+  electrical a0,a1,a2,a3,b0,b1,b2,b3,cin,s0,s1,s2,s3,cout,vdd,gnd;
+  electrical c1,c2,c3;
+
+  FULL_ADDER_MOS fa0 (.in1(a0), .in2(b0), .cin(cin), .sum(s0), .cout(c1), .vdd(vdd), .gnd(gnd));
+  FULL_ADDER_MOS fa1 (.in1(a1), .in2(b1), .cin(c1),  .sum(s1), .cout(c2), .vdd(vdd), .gnd(gnd));
+  FULL_ADDER_MOS fa2 (.in1(a2), .in2(b2), .cin(c2),  .sum(s2), .cout(c3), .vdd(vdd), .gnd(gnd));
+  FULL_ADDER_MOS fa3 (.in1(a3), .in2(b3), .cin(c3),  .sum(s3), .cout(cout), .vdd(vdd), .gnd(gnd));
+endmodule

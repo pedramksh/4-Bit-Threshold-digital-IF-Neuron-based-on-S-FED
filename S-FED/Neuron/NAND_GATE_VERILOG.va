@@ -1,0 +1,18 @@
+// VerilogA for verilog_a_test4, NAND_GATE, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module NAND_GATE(in1, in2, out, vdd, gnd, bulk);
+  inout in1, in2, out, vdd, gnd, bulk;
+  electrical in1, in2, out, vdd, gnd, bulk;
+
+electrical node1;
+
+SFED sfed1 (.d(vdd), .gs(gnd), .gd(in1), .s(out), .b(bulk));
+SFED sfed2 (.d(vdd), .gs(gnd), .gd(in2), .s(out), .b(bulk));
+SFED sfed3 (.d(out), .gs(in1), .gd(vdd), .s(node1), .b(bulk));
+SFED sfed4 (.d(node1), .gs(in2), .gd(vdd), .s(gnd), .b(bulk));
+
+
+endmodule

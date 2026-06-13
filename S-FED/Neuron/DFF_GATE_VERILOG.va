@@ -1,0 +1,43 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+// Positive-edge triggered D flip-flop (masterslave, NAND-based)
+// Assumes you already have: NAND_GATE, NOT_GATE with ports (.in1/.in2/.out, vdd,gnd,bulk)
+module DFF(d, clk, q, qb, vdd, gnd, bulk);
+  inout d, clk, q, qb, vdd, gnd, bulk;
+  electrical d, clk, q, qb, vdd, gnd, bulk;
+
+  // Internal nodes
+  electrical d_b, clk_b;
+  electrical s1, r1, m_q, m_qb;     // master latch nets
+  electrical s2, r2;                // slave latch inputs
+
+  // Inversions
+  NOT_GATE inv_d   (.in(d),   .out(d_b),   .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE inv_clk (.in(clk), .out(clk_b), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // -------- Master: level-sensitive when CLK = 0 (via NAND gating with CLK=1)
+  // Gated inputs for master SR (active when CLK=1)
+  NAND_GATE n_s1 (.in1(d),   .in2(clk_b), .out(s1), .vdd(vdd), .gnd(gnd), .bulk(bulk));   // S = ~(D & CLK)
+  NAND_GATE n_r1 (.in1(d_b), .in2(clk_b), .out(r1), .vdd(vdd), .gnd(gnd), .bulk(bulk));   // R = ~(~D & CLK)
+
+  // Master SR latch (cross-coupled NANDs)
+  NAND_GATE n_mq  (.in1(s1),  .in2(m_qb), .out(m_q),  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE n_mqb (.in1(r1),  .in2(m_q),  .out(m_qb), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // -------- Slave: level-sensitive when CLK = 1 (we gate with ~CLK)
+  // Gated inputs for slave SR (active when CLK=0  using ~CLK here to make posedge DFF)
+  NAND_GATE n_s2 (.in1(m_q),  .in2(clk), .out(s2), .vdd(vdd), .gnd(gnd), .bulk(bulk));   // S2 = ~(M_Q & ~CLK)
+  NAND_GATE n_r2 (.in1(m_qb), .in2(clk), .out(r2), .vdd(vdd), .gnd(gnd), .bulk(bulk));   // R2 = ~(M_QB & ~CLK)
+
+  // Slave SR latch (cross-coupled NANDs)  outputs Q/QB
+  NAND_GATE n_q  (.in1(s2), .in2(qb), .out(q),  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE n_qb (.in1(r2), .in2(q),  .out(qb), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // Optional: you can add an analog initial condition block if you want a defined power-up state:
+  // analog begin
+  //   @(initial_step) begin
+  //     // For example, start at Q=0: force a tiny bias via a very weak source or rely on your gmin rails.
+  //   end
+  // end
+endmodule

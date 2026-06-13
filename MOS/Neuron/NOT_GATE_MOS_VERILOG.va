@@ -1,0 +1,14 @@
+// VerilogA for verilog_a_test4, NOT_GATE, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module NOT_GATE_MOS(in, out, vdd, gnd);
+  inout in, out, vdd, gnd;
+  electrical in, out, vdd, gnd;
+
+
+PMOS_22n pmos1 (.drain(vdd), .gate(in), .source(out), .bulk(vdd));
+NMOS_22n nmos1 (.drain(out), .gate(in), .source(gnd), .bulk(gnd));
+
+endmodule

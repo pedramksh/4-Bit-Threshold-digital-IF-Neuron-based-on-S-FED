@@ -1,0 +1,15 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+module HALF_ADDER(in1, in2, sum, carry, vdd, gnd, bulk);
+  inout in1, in2, sum, carry, vdd, gnd, bulk;
+  electrical in1, in2, sum, carry, vdd, gnd, bulk;
+  electrical nand_out;
+
+  // SUM = XOR
+  XOR_GATE xor1 (.in1(in1), .in2(in2), .out(sum), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // CARRY = A AND B = NOT(A NAND B)
+  NAND_GATE nand1 (.in1(in1), .in2(in2), .out(nand_out), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE not1  (.in(nand_out), .out(carry), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+endmodule

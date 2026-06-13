@@ -1,0 +1,18 @@
+// VerilogA for verilog_a_test4, NOR_GATE;, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module NOR_GATE_MOS(in1, in2, out, vdd, gnd);
+  inout in1, in2, out, vdd, gnd;
+  electrical in1, in2, out, vdd, gnd;
+
+electrical node1;
+
+PMOS_22n PMOS1 (.drain(vdd), .gate(in1), .source(node1), .bulk(vdd));
+PMOS_22n PMOS2 (.drain(node1), .gate(in2), .source(out), .bulk(vdd));
+NMOS_22n NMOS1 (.drain(out), .gate(in2), .source(gnd), .bulk(gnd));
+NMOS_22n NMOS2 (.drain(out), .gate(in1), .source(gnd), .bulk(gnd));
+
+
+endmodule

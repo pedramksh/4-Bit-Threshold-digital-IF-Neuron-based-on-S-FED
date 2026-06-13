@@ -1,0 +1,126 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+// 4-bit comparator: A[3:0] vs B[3:0] -> gt, eq, lt  (a3..MSB, a0..LSB)
+module COMPARATOR4bit(
+  a0,a1,a2,a3,
+  b0,b1,b2,b3,
+  gt, eq, lt,
+  vdd, gnd, bulk
+);
+  inout a0,a1,a2,a3,b0,b1,b2,b3,gt,eq,lt,vdd,gnd,bulk;
+  electrical a0,a1,a2,a3,b0,b1,b2,b3,gt,eq,lt,vdd,gnd,bulk;
+
+  // -------- Inverters for B and A (used in gt/lt terms)
+  electrical nb0,nb1,nb2,nb3;
+  electrical na0,na1,na2,na3;
+  NOT_GATE inv_b0 (.in(b0), .out(nb0), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE inv_b1 (.in(b1), .out(nb1), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE inv_b2 (.in(b2), .out(nb2), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE inv_b3 (.in(b3), .out(nb3), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  NOT_GATE inv_a0 (.in(a0), .out(na0), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE inv_a1 (.in(a1), .out(na1), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE inv_a2 (.in(a2), .out(na2), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE inv_a3 (.in(a3), .out(na3), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // -------- Bit equalities: ei = XNOR(ai, bi) = NOT(XOR)
+  electrical x0,x1,x2,x3, e0,e1,e2,e3;
+  XOR_GATE xg0 (.in1(a0), .in2(b0), .out(x0), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  XOR_GATE xg1 (.in1(a1), .in2(b1), .out(x1), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  XOR_GATE xg2 (.in1(a2), .in2(b2), .out(x2), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  XOR_GATE xg3 (.in1(a3), .in2(b3), .out(x3), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE nx0 (.in(x0), .out(e0), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE nx1 (.in(x1), .out(e1), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE nx2 (.in(x2), .out(e2), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE nx3 (.in(x3), .out(e3), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // -------- Prefix equalities
+  electrical n_e32, e32, n_e321, e321;
+  NAND_GATE g_e32   (.in1(e3),  .in2(e2), .out(n_e32),   .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  i_e32   (.in(n_e32), .out(e32),              .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE g_e321  (.in1(e32), .in2(e1), .out(n_e321),  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  i_e321  (.in(n_e321), .out(e321),            .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // -------- eq = e3 & e2 & e1 & e0  (AND via NAND+NOT stages)
+  electrical n_e10, e10, n_eq_and;
+  // e10 = e1 & e0
+  NAND_GATE g_e10_n (.in1(e1), .in2(e0), .out(n_e10), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_e10   (.in(n_e10), .out(e10),          .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  // eq = e32 & e10
+  NAND_GATE g_eq_and  (.in1(e32), .in2(e10), .out(n_eq_and), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_eq_out  (.in(n_eq_and), .out(eq),               .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // -------- Greater-than terms:
+  // t3 = a3 & ~b3
+  electrical n_t3, t3;
+  NAND_GATE g_t3_n (.in1(a3), .in2(nb3), .out(n_t3), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_t3   (.in(n_t3), .out(t3),           .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // t2 = e3 & a2 & ~b2
+  electrical n_e3a2, e3a2, n_t2, t2;
+  NAND_GATE g_e3a2_n (.in1(e3), .in2(a2), .out(n_e3a2), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_e3a2   (.in(n_e3a2), .out(e3a2),          .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE g_t2_n   (.in1(e3a2), .in2(nb2), .out(n_t2), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_t2     (.in(n_t2), .out(t2),              .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // t1 = (e3&e2) & a1 & ~b1  (use e32)
+  electrical n_e32a1, e32a1, n_t1, t1;
+  NAND_GATE g_e32a1_n (.in1(e32), .in2(a1), .out(n_e32a1), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_e32a1   (.in(n_e32a1), .out(e32a1),         .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE g_t1_n    (.in1(e32a1), .in2(nb1), .out(n_t1), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_t1      (.in(n_t1), .out(t1),               .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // t0 = (e3&e2&e1) & a0 & ~b0  (use e321)
+  electrical n_e321a0, e321a0, n_t0, t0;
+  NAND_GATE g_e321a0_n (.in1(e321), .in2(a0), .out(n_e321a0), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_e321a0   (.in(n_e321a0), .out(e321a0),          .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE g_t0_n     (.in1(e321a0), .in2(nb0), .out(n_t0),  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_t0       (.in(n_t0), .out(t0),                  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // gt = t3 | t2 | t1 | t0   (OR4 via NOR+NOT)
+  electrical n_or_gt_a, or_gt_a, n_or_gt_b, or_gt_b, n_gt;
+  NOR_GATE  g_or_gt_a (.in1(t3), .in2(t2), .out(n_or_gt_a), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  i_or_gt_a (.in(n_or_gt_a), .out(or_gt_a),       .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOR_GATE  g_or_gt_b (.in1(t1), .in2(t0), .out(n_or_gt_b), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  i_or_gt_b (.in(n_or_gt_b), .out(or_gt_b),       .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOR_GATE  g_gt_nor  (.in1(or_gt_a), .in2(or_gt_b), .out(n_gt), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  i_gt      (.in(n_gt), .out(gt),                  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // -------- Less-than terms (symmetric):
+  // l3 = ~a3 & b3
+  electrical n_l3, l3;
+  NAND_GATE g_l3_n (.in1(na3), .in2(b3), .out(n_l3), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_l3   (.in(n_l3), .out(l3),             .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // l2 = e3 & ~a2 & b2
+  electrical n_e3na2, e3na2, n_l2, l2;
+  NAND_GATE g_e3na2_n (.in1(e3), .in2(na2), .out(n_e3na2), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_e3na2   (.in(n_e3na2), .out(e3na2),          .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE g_l2_n    (.in1(e3na2), .in2(b2), .out(n_l2),  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_l2      (.in(n_l2), .out(l2),                .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // l1 = (e3&e2) & ~a1 & b1  (use e32)
+  electrical n_e32na1, e32na1, n_l1, l1;
+  NAND_GATE g_e32na1_n (.in1(e32), .in2(na1), .out(n_e32na1), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_e32na1   (.in(n_e32na1), .out(e32na1),          .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE g_l1_n     (.in1(e32na1), .in2(b1), .out(n_l1),   .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_l1       (.in(n_l1), .out(l1),                  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // l0 = (e3&e2&e1) & ~a0 & b0  (use e321)
+  electrical n_e321na0, e321na0, n_l0, l0;
+  NAND_GATE g_e321na0_n (.in1(e321), .in2(na0), .out(n_e321na0), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_e321na0   (.in(n_e321na0), .out(e321na0),           .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NAND_GATE g_l0_n      (.in1(e321na0), .in2(b0), .out(n_l0),     .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  g_l0        (.in(n_l0), .out(l0),                     .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // lt = l3 | l2 | l1 | l0   (OR4 via NOR+NOT)
+  electrical n_or_lt_a, or_lt_a, n_or_lt_b, or_lt_b, n_lt;
+  NOR_GATE  g_or_lt_a (.in1(l3), .in2(l2), .out(n_or_lt_a), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  i_or_lt_a (.in(n_or_lt_a), .out(or_lt_a),       .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOR_GATE  g_or_lt_b (.in1(l1), .in2(l0), .out(n_or_lt_b), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  i_or_lt_b (.in(n_or_lt_b), .out(or_lt_b),       .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOR_GATE  g_lt_nor  (.in1(or_lt_a), .in2(or_lt_b), .out(n_lt), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE  i_lt      (.in(n_lt), .out(lt),                  .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+endmodule

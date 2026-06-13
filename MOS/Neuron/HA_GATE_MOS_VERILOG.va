@@ -1,0 +1,15 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+module HALF_ADDER_MOS(in1, in2, sum, carry, vdd, gnd);
+  inout in1, in2, sum, carry, vdd, gnd;
+  electrical in1, in2, sum, carry, vdd, gnd;
+  electrical nand_out;
+
+  // SUM = XOR
+  XOR_GATE_MOS xor1 (.in1(in1), .in2(in2), .out(sum), .vdd(vdd), .gnd(gnd));
+
+  // CARRY = A AND B = NOT(A NAND B)
+  NAND_GATE_MOS nand1 (.in1(in1), .in2(in2), .out(nand_out), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS not1  (.in(nand_out), .out(carry), .vdd(vdd), .gnd(gnd));
+endmodule

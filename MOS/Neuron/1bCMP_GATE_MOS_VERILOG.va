@@ -1,0 +1,26 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+// 1-bit comparator: compares a vs b -> gt, eq, lt
+module COMP1bit_MOS(a, b, gt, eq, lt, vdd, gnd);
+  inout a, b, gt, eq, lt, vdd, gnd;
+  electrical a, b, gt, eq, lt, vdd, gnd;
+
+  electrical nb, na, n1, n2, x, xbar;
+
+  // Inverts
+  NOT_GATE_MOS inv_b (.in(b), .out(nb), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS inv_a (.in(a), .out(na), .vdd(vdd), .gnd(gnd));
+
+  // eq = XNOR(a,b) = NOT( XOR(a,b) )
+  XOR_GATE_MOS u_xor (.in1(a), .in2(b), .out(x), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS u_nx  (.in(x), .out(eq), .vdd(vdd), .gnd(gnd));
+
+  // gt = a & ~b  = NOT( NAND(a, ~b) )
+  NAND_GATE_MOS n_gt (.in1(a), .in2(nb), .out(n1), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS  i_gt (.in(n1), .out(gt), .vdd(vdd), .gnd(gnd));
+
+  // lt = ~a & b  = NOT( NAND(~a, b) )
+  NAND_GATE_MOS n_lt (.in1(na), .in2(b), .out(n2), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS  i_lt (.in(n2), .out(lt), .vdd(vdd), .gnd(gnd));
+endmodule

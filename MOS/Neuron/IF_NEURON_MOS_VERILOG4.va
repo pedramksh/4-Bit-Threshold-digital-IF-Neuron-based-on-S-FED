@@ -1,0 +1,88 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+module IF_NEURON4bit_MOS (
+  clk,
+  spike_in,               // async spike input (synchronized below)
+  t0, t1, t2, t3,         // 4-bit threshold (LSB..MSB)
+  q0, q1, q2, q3,         // 4-bit membrane state (registered)
+  spike_out,              // high when (SUM >= THETA) this cycle
+  vdd, gnd
+);
+
+  inout clk, spike_in, t0,t1,t2,t3, q0,q1,q2,q3, spike_out, vdd, gnd;
+  electrical clk, spike_in, t0,t1,t2,t3, q0,q1,q2,q3, spike_out, vdd, gnd;
+ 
+  // --- internal nets
+  electrical spike_sync, spike_sync_b;    // synchronized spike_in
+  electrical s0,s1,s2,s3, cout_dummy;     // adder sum
+  electrical gt, eq, lt;                  // comparator outputs
+  electrical ge_n, ge;                    // ge = gt | eq
+  electrical ge_buf, ge_buf2;             // buffer chain to drive spike_out
+  electrical ge_reg, ge_reg_b;            // registered spike
+  electrical n_ge_comb;                   // ~ge (Combinational Inverted)
+  electrical d0,d1,d2,d3;                 // next-state
+  electrical z0,z1,z2,z3;                 // NAND outputs for AND masking
+  electrical qb0,qb1,qb2,qb3;             // complements of Q (unused)
+
+  // ===== 0) Synchronize spike_in into clk domain =====
+  DFF_MOS u_sync (.d(spike_in), .clk(clk), .q(spike_sync), .qb(spike_sync_b),
+                       .vdd(vdd), .gnd(gnd));
+
+  // ===== 1) Integrate: SUM = Q + spike_sync =====
+  RIPPLE_ADDER4_MOS u_add4 (
+    .a0(q0), .a1(q1), .a2(q2), .a3(q3),
+    .b0(gnd), .b1(gnd), .b2(gnd), .b3(gnd),   // add +Cin only
+    .cin(spike_sync),
+    .s0(s0), .s1(s1), .s2(s2), .s3(s3),
+    .cout(cout_dummy),
+    .vdd(vdd), .gnd(gnd)
+  );
+
+  // ===== 2) Compare SUM vs THETA =====
+  COMPARATOR4bit_MOS u_cmp4 (
+    .a0(s0), .a1(s1), .a2(s2), .a3(s3),
+    .b0(t0), .b1(t1), .b2(t2), .b3(t3),
+    .gt(gt), .eq(eq), .lt(lt),
+    .vdd(vdd), .gnd(gnd)
+  );
+
+  // ge = gt OR eq -> NOR + NOT
+  NOR_GATE_MOS u_ge_nor (.in1(gt), .in2(eq), .out(ge_n), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS u_ge     (.in(ge_n), .out(ge), .vdd(vdd), .gnd(gnd));
+
+  // *** NEW: Create Combinational Inverse for Fast Reset ***
+  // We use this to kill the data 'd' in the SAME cycle.
+  NOT_GATE_MOS u_inv_ge_comb (.in(ge), .out(n_ge_comb), .vdd(vdd), .gnd(gnd));
+
+  // ===== 3) Register ge for Output (Glitch Removal) =====
+  DFF_MOS u_spikeff (.d(ge), .clk(clk), .q(ge_reg), .qb(ge_reg_b),
+                          .vdd(vdd), .gnd(gnd));
+
+  // Drive spike_out from Registered signal (Clean)
+  NOT_GATE_MOS u_spike_buf1 (.in(ge_reg), .out(ge_buf),  .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS u_spike_buf2 (.in(ge_buf), .out(spike_out), .vdd(vdd), .gnd(gnd));
+
+  // ===== 4) Next-state with IMMEDIATE reset mask: d = SUM & ~ge =====
+  // We use 'n_ge_comb' here, NOT 'n_ge_reg'.
+  // This forces d=0 immediately when threshold is crossed, so Q resets at the very next edge.
+  
+  NAND_GATE_MOS u_and0_n (.in1(s0), .in2(n_ge_comb), .out(z0), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS  u_and0   (.in(z0), .out(d0), .vdd(vdd), .gnd(gnd));
+
+  NAND_GATE_MOS u_and1_n (.in1(s1), .in2(n_ge_comb), .out(z1), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS  u_and1   (.in(z1), .out(d1), .vdd(vdd), .gnd(gnd));
+
+  NAND_GATE_MOS u_and2_n (.in1(s2), .in2(n_ge_comb), .out(z2), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS  u_and2   (.in(z2), .out(d2), .vdd(vdd), .gnd(gnd));
+
+  NAND_GATE_MOS u_and3_n (.in1(s3), .in2(n_ge_comb), .out(z3), .vdd(vdd), .gnd(gnd));
+  NOT_GATE_MOS  u_and3   (.in(z3), .out(d3), .vdd(vdd), .gnd(gnd));
+
+  // ===== 5) State register (posedge) =====
+  DFF_MOS ff0 (.d(d0), .clk(clk), .q(q0), .qb(qb0), .vdd(vdd), .gnd(gnd));
+  DFF_MOS ff1 (.d(d1), .clk(clk), .q(q1), .qb(qb1), .vdd(vdd), .gnd(gnd));
+  DFF_MOS ff2 (.d(d2), .clk(clk), .q(q2), .qb(qb2), .vdd(vdd), .gnd(gnd));
+  DFF_MOS ff3 (.d(d3), .clk(clk), .q(q3), .qb(qb3), .vdd(vdd), .gnd(gnd));
+
+endmodule

@@ -1,0 +1,14 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+module XOR_GATE_MOS(in1, in2, out, vdd, gnd);
+  inout in1, in2, out, vdd, gnd;
+  electrical in1, in2, out, vdd, gnd;
+  electrical n1, n2, n3;
+
+  // XOR using 4 NAND gates
+  NAND_GATE_MOS nand1 (.in1(in1), .in2(in2), .out(n1), .vdd(vdd), .gnd(gnd));
+  NAND_GATE_MOS nand2 (.in1(in1), .in2(n1),  .out(n2), .vdd(vdd), .gnd(gnd));
+  NAND_GATE_MOS nand3 (.in1(in2), .in2(n1),  .out(n3), .vdd(vdd), .gnd(gnd));
+  NAND_GATE_MOS nand4 (.in1(n2),  .in2(n3),  .out(out), .vdd(vdd), .gnd(gnd));
+endmodule

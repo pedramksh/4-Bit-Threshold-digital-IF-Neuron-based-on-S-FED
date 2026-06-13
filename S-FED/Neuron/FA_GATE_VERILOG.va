@@ -1,0 +1,18 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+module FULL_ADDER(in1, in2, cin, sum, cout, vdd, gnd, bulk);
+  inout in1, in2, cin, sum, cout, vdd, gnd, bulk;
+  electrical in1, in2, cin, sum, cout, vdd, gnd, bulk;
+  electrical sum1, carry1, carry2, nor_out;
+
+  // First Half Adder
+  HALF_ADDER ha1 (.in1(in1), .in2(in2), .sum(sum1), .carry(carry1), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // Second Half Adder
+  HALF_ADDER ha2 (.in1(sum1), .in2(cin), .sum(sum), .carry(carry2), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+
+  // Cout = carry1 OR carry2 = NOT( carry1 NOR carry2 )
+  NOR_GATE nor1 (.in1(carry1), .in2(carry2), .out(nor_out), .vdd(vdd), .gnd(gnd), .bulk(bulk));
+  NOT_GATE not1 (.in(nor_out), .out(cout),   .vdd(vdd), .gnd(gnd), .bulk(bulk));
+endmodule
