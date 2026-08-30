@@ -1,0 +1,155 @@
+go atlas	simflags = "-p 6"
+TITLE FED
+#******B.Jafari******
+# ************************set parametric statment *****************************
+Mesh  OUTF=sfedq1.STR  width=1
+set LDrain=0.03
+set LSource=0.03
+set GateDrain=0.01
+set GateSource=0.01
+set Gap=0.005
+set tox=0.0008
+set tsiUp=0.003
+set tsiDown=0.007
+set tsi=$tsiUp+$tsiDown
+set tBox=0.145
+set DrainStart=0.000
+set tsiMidle=$tsiUp
+set L=$DrainStart+$LDrain+$LSource+$GateDrain+$GateSource+$Gap
+set H=$tsi+$tBox
+set DrainEnd=$DrainStart+$LDrain
+set SourceStart=$DrainStart+$LDrain+$GateDrain+$GateSource+$Gap
+set SourceEnd=$L
+set GateDrainEnd=$DrainStart+$LDrain+$GateDrain
+set GateSourceStart=$GateDrainEnd+$Gap
+#set lch=0.025
+set MeshSpacingHD=0.001
+set MeshSpacingLD=0.0025
+set MeshSpacingVLD=0.010
+#set xlspac=$lch/20
+#set xhspac=$Ldrain/3
+#set ylspac=$tsi/10
+#set yhspac=$tBox/3
+#
+set FormFactor=$GateDrain/$tsi
+set VDD=1.2
+set VDDmid=$VDD/2
+# ************make main STRUCTUR****************
+x.mesh loc=$DrainStart       spac=$MeshSpacingLD
+x.mesh loc=$DrainEnd         spac=$MeshSpacingLD
+x.mesh loc=$GateDrainEnd     spac=$MeshSpacingHD
+x.mesh loc=$GateSourceStart  spac=$MeshSpacingHD
+x.mesh loc=$SourceStart      spac=$MeshSpacingLD
+x.mesh loc=$L                spac=$MeshSpacingLD
+#
+y.mesh loc=-$tox             spac=$MeshSpacingHD
+y.mesh loc=0                 spac=$MeshSpacingHD
+y.mesh loc=$tsi              spac=$MeshSpacingHD
+y.mesh loc=$H                spac=$MeshSpacingVLD
+#
+#x.mesh loc=0		spac=$xhspac
+#x.mesh loc=$Ldrain 	spac=$xlspac
+#x.mesh loc=$SourceStart	spac=$xlspac
+#x.mesh loc=$L 	spac=$xhspac
+#
+#y.mesh loc=-$tox	spac=$ylspac 
+#y.mesh loc=0		spac=$ylspac
+#y.mesh loc=$tsi	spac=$ylspac
+#y.mesh loc=$H		spac=$yhspac
+#  ******************************************************
+region      num=1 x.min=$DrainStart x.max=$L y.min=$tsi \
+y.max=$H  oxide
+# 
+region      num=2 x.min=$DrainStart x.max=$L y.min=-$tox \
+y.max=0 oxide 
+#
+region      num=3 x.min=$DrainStart x.max=$DrainEnd y.min=0 \
+y.max=$tsiMidle silicon 
+#
+region      num=4 x.min=$DrainStart  x.max=$DrainEnd  y.min=$tsiMidle \
+y.max=$tsi  silicon 
+#
+region      num=5 x.min=$SourceStart x.max=$L y.min=0 \
+y.max=$tsiMidle  silicon
+#
+region      num=6 x.min=$SourceStart x.max=$L y.min=$tsiMidle \
+y.max=$tsi  silicon
+#
+region      num=7 x.min=$DrainEnd x.max=$SourceStart  y.min=0 \
+y.max=$tsi  silicon 
+#
+#************** define the electrodes **************************
+#1-GATE-DG (gate) #2-GATE-SG (well) #3-DRAIN #4-SOURCE #5-BULK(below oxide)
+electrode name=gate x.min=$DrainEnd x.max=$GateDrainEnd y.min=-$tox \
+y.max=-$tox 
+# 
+electrode name=well x.min=$GateSourceStart x.max=$SourceStart y.min=-$tox \
+y.max=-$tox  
+#
+electrode name=drain x.min=$DrainStart x.max=$DrainStart y.min=0 \
+y.max=$tsi  
+#
+electrode name=source x.min=$L x.max=$L y.min=0 \
+y.max=$tsi 
+#
+electrode name=bulk x.min=$DrainStart x.max=$L y.min=$H \
+y.max=$H
+# *********** define the doping concentrations *********
+doping       uniform conc=1e21 p.type  reg=3
+doping       uniform conc=1e21 n.type  reg=4
+doping       uniform conc=1e21 n.type  reg=5
+doping       uniform conc=1e21 p.type  reg=6
+doping       uniform conc=1e0 p.type   reg=7
+save         outf=sfed.str
+#tonyplot     sfed.str
+# *********** set workfunction of gate *****************
+contact      name=gate workfun=4.7
+contact      name=well workfun=4.7
+# *********** set MODELS and METHOD*********************
+models       conmob srh auger fermidirac auggen consrh bgn fldmob print  
+#method     newton   trap maxtrap=6 
+method		newton   trap maxtrap=30 itlimit=80
+#methods	 gummel	newton 	itlimit = 60  	maxtraps = 10	 gum.init = 5  
+#output con.band e.field  impact qfn qfp   val.band  e.temp  e.velocity  band.param  minset
+#output   charge  con.band  val.band  devdeg  e.field  E.mobility  flowlines  impact  j.total	qfn  qfp  qss  traps  traps.ft  val.band  ox.charge  permittivity e.temp  e.velocity  band.param  minset j.elect j.electron j.hole j.total jx.electron jx.hole jx. total
+output 	con.band e.field E.mobility band.param impact qfn qfp   val.band
+solve init
+solve prev
+#*****************ID VD ModeB*************************************
+log          outf=sfedModeB.log  
+solve        vdrain=0
+solve        vbulk=$VDDmid
+solve        vsource=0
+solve        vwell=$VDD  
+solve        vgate=0 
+solve        vdrain=0 vstep=0.01 name=drain vfinal=$VDD
+save         outf=sfedModeB.str
+#*****************ID VD ModeC*************************************
+log          outf=sfedModeC.log  
+solve        vdrain=0
+solve        vbulk=$VDDmid
+solve        vsource=0
+solve        vwell=$VDD  
+solve        vgate=$VDD 
+solve        vdrain=0 vstep=0.01 name=drain vfinal=$VDD
+save         outf=sfedModeC.str
+#*****************ID VD ModeD*************************************
+log          outf=sfedModeD.log  
+solve        vdrain=0
+solve        vbulk=$VDDmid
+solve        vsource=0
+solve        vwell=0  
+solve        vgate=0 
+solve        vdrain=0 vstep=0.01 name=drain vfinal=$VDD
+save         outf=sfedModeD.str
+#*****************ID VD ModeE************************************
+log          outf=sfedModeE.log  
+solve        vdrain=0
+solve        vbulk=$VDDmid
+solve        vsource=0
+solve        vwell=0  
+solve        vgate=$VDD 
+solve        vdrain=0 vstep=0.01 name=drain vfinal=$VDD
+save         outf=sfedModeE.str
+
+quit
