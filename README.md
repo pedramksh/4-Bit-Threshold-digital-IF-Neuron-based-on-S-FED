@@ -5,14 +5,14 @@ This is a simulation file repository for a 4-Bit Threshold digital IF Neuron
 
 This repository contains the Verilog-A behavioral models, standard cell logic gates, and top-level simulation files for a fully digital 4-bit Integrate-and-Fire (IF) spiking neuron built using **25-nm Side-Contacted Field-Effect Diode (S-FED)** technology.
 
-This architecture achieves complete operational stability at a clock frequency of **1.095 GHz** while significantly reducing static and dynamic power compared to traditional CMOS baselines.
+This architecture achieves complete operational stability at a clock frequency of **1 GHz** while significantly reducing static and dynamic power compared to traditional CMOS baselines.
 
 ## Key Performance Benchmarks
 
 Compared to a predictive 23-nm low-power CMOS baseline at 1.095 GHz:
 * **Static Leakage Power:** 1.17 µW (a **2.6× reduction** from 3.18 µW CMOS)
 * **Dynamic Energy:** 768 fJ/spike (a **4.5× reduction** from 3.47 pJ/spike CMOS)
-* **Operating Frequency:** Scaled from 2.32 MHz (prior analog layouts) to **1.095 GHz** (this digital register-accumulator architecture)
+* **Operating Frequency:** Scaled from 2.32 MHz (prior analog layouts) to **1 GHz** (this digital register-accumulator architecture)
 * **Transistor Sizing:** Perfectly symmetrical layout ($W_p = W_n = 1\,\mu\text{m}$), eliminating area-expensive asymmetric conventional sizing rules.
 
 ## Architecture Overview
