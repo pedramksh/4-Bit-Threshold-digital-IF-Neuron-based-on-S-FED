@@ -22,7 +22,7 @@ The design shifts the neuromorphic processing paradigm away from noise-susceptib
 2. **Membrane Potential Integration Subsystem:** A 4-bit ripple-carry adder where input spikes feed directly into the carry-in ($C_{in}$) terminal, eliminating bulky multipliers.
 3. **Magnitude Comparison Subsystem:** A 4-bit MSB-priority comparator tracking threshold crossings against a user-defined register.
 4. **Glitch-Removal Block:** An output synchronization flip-flop ensuring clean, hazard-free spike delivery.
-5. **Immediate Reset Feedback Mask:** An instant combinational mask loop ($D_i = \text{SUM}_i \cdot (1 - ge)$) preventing over-integration errors within the same clock cycle.
+5. **Immediate Reset Feedback Mask:** An instant combinational mask loop $D_i = \text{SUM}_i \cdot (1 - ge)$ preventing over-integration errors within the same clock cycle.
 
 ## Repository Structure
 
