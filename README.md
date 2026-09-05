@@ -9,7 +9,7 @@ This architecture achieves complete operational stability at a clock frequency o
 
 ## Key Performance Benchmarks
 
-Compared to a predictive 23-nm low-power CMOS baseline at 1.095 GHz:
+Compared to a predictive 23-nm low-power CMOS baseline at 1 GHz:
 * **Static Leakage Power:** 1.17 µW (a **2.6× reduction** from 3.18 µW CMOS)
 * **Dynamic Energy:** 768 fJ/spike (a **4.5× reduction** from 3.47 pJ/spike CMOS)
 * **Operating Frequency:** Scaled from 2.32 MHz (prior analog layouts) to **1 GHz** (this digital register-accumulator architecture)
